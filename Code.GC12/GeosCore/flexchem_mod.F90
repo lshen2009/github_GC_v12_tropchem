@@ -113,7 +113,8 @@ CONTAINS
     USE GCKPP_HetRates,       ONLY : SET_HET
     USE GCKPP_Monitor,        ONLY : SPC_NAMES, FAM_NAMES
     USE GCKPP_Parameters
-    USE GCKPP_Integrator,     ONLY : INTEGRATE, NHnew
+	USE gckpp_JacobianSP
+    USE GCKPP_Integrator
     USE GCKPP_Function 
     USE GCKPP_Model
     USE GCKPP_Global
@@ -122,7 +123,7 @@ CONTAINS
     USE GC_GRID_MOD,          ONLY : GET_YMID
     USE GEOS_Timers_Mod
     USE Input_Opt_Mod,        ONLY : OptInput
-    USE PhysConstants,        ONLY : AVO
+    USE PhysConstants,        ONLY : AVO,PI
     USE PRESSURE_MOD        
     USE Species_Mod,          ONLY : Species
     USE State_Chm_Mod,        ONLY : ChmState
@@ -134,6 +135,7 @@ CONTAINS
     USE TIME_MOD,             ONLY : Get_Day
     USE TIME_MOD,             ONLY : Get_Month
     USE TIME_MOD,             ONLY : Get_Year
+	USE TIME_MOD,             ONLY : GET_NHMS,GET_NYMD,ITS_A_NEW_HOUR
     USE UnitConv_Mod,         ONLY : Convert_Spc_Units
     USE UCX_MOD,              ONLY : CALC_STRAT_AER
     USE UCX_MOD,              ONLY : SO4_PHOTFRAC
@@ -157,7 +159,7 @@ CONTAINS
 ! !OUTPUT PARAMETERS:
 !
     INTEGER,        INTENT(OUT)   :: RC         ! Success or failure
-! 
+    INTEGER :: LS_time(8)   
 ! !REVISION HISTORY:
 !  14 Dec 2015 - M.S. Long   - Initial version
 !  18 Dec 2015 - M. Sulprizio- Add calls to OHSAVE and DO_DIAG_OH
@@ -218,7 +220,7 @@ CONTAINS
     REAL(fp)               :: Start,     Finish,   rtim,      itim
     REAL(fp)               :: SO4_FRAC,  YLAT,     T,         TIN
     REAL(fp)               :: JNoon_Fac, TOUT
-
+	INTEGER                :: LS_type, LS_NSEL, LS_NDEL
     ! Strings
     CHARACTER(LEN=63)      :: OrigUnit
     CHARACTER(LEN=255)     :: ErrMsg,   ThisLoc
@@ -235,13 +237,17 @@ CONTAINS
     REAL(dp)               :: RSTATE     (                  20               )
     REAL(dp)               :: GLOB_RCONST(IIPAR,JJPAR,LLPAR,NREACT           )
     REAL(fp)               :: Before     (IIPAR,JJPAR,LLPAR,State_Chm%nAdvect)
+	REAL(kind=dp)          :: Prate(NVAR),Lrate(NVAR)
 
     ! For tagged CO saving
     REAL(fp)               :: LCH4, PCO_TOT, PCO_CH4, PCO_NMVOC
-
+    REAL(fp)               :: COSSZA,SZA,PI180
     ! Objects
     TYPE(Species), POINTER :: SpcInfo
-
+    INTEGER :: NHMS,NYMD,YMDH
+    LOGICAL :: new_hour,flag
+	character(len=1024) :: outputname1,outputname2,outputname3,outputname4
+	
     ! For testing only, may be removed later (mps, 4/26/16)
     LOGICAL                :: DO_HETCHEM
     REAL(fp)               :: TimeStart,TimeEnd
@@ -271,6 +277,11 @@ CONTAINS
     ! This is for testing only and may be removed later (mps, 4/26/16)
     DO_HETCHEM  = .TRUE.
 
+    NHMS=GET_NHMS()!lshen
+    NYMD  = GET_NYMD()!lshen
+    new_hour=ITS_A_NEW_HOUR()!lshen
+	
+	print *,'lshen_test_new_hour',NYMD,NHMS,new_hour
     ! Remove debug output
     !IF ( FIRSTCHEM .AND. am_I_Root ) THEN
     !   WRITE( 6, '(a)' ) REPEAT( '#', 32 )
@@ -607,6 +618,8 @@ CONTAINS
     !$OMP PRIVATE  ( SO4_FRAC, IERR,     RCNTRL,  START, FINISH, ISTATUS    )&
     !$OMP PRIVATE  ( RSTATE,   SpcID,    KppID,   F,     P                  )&
     !$OMP PRIVATE  ( LCH4,     PCO_TOT,  PCO_CH4, PCO_NMVOC                 ) &
+	!$OMP PRIVATE  ( LS_type,  LS_NSEL,  LS_NDEL, Prate, Lrate ) &
+	!$OMP PRIVATE  ( SZA,PI180,COSSZA) &
     !$OMP REDUCTION( +:ITIM                                                 )&
     !$OMP REDUCTION( +:RTIM                                                 )&
     !$OMP REDUCTION( +:TOTSTEPS                                             )&
@@ -616,10 +629,9 @@ CONTAINS
     !$OMP REDUCTION( +:TOTREJEC                                             )&
     !$OMP REDUCTION( +:TOTNUMLU                                             )&
     !$OMP SCHEDULE ( DYNAMIC,  1                                            )
-    DO L = 1, LLPAR
+    DO L = 1, LLPAR       	   
     DO J = 1, JJPAR
     DO I = 1, IIPAR
-
        !====================================================================
        ! For safety's sake, initialize certain variables for each grid
        ! box (I,J,L), whether or not chemistry will be done there.
@@ -871,7 +883,23 @@ CONTAINS
 
        ! Update the array of rate constants
        CALL Update_RCONST( )
-
+	   
+	   !lshen added this
+	   !IF (new_hour) THEN
+	   !IF (MOD(NHMS,2000)==0) then	  
+	     CALL Fun_PL(VAR, FIX, RCONST, Prate, Lrate)
+		 LS_type=Determine_type(Prate,Lrate)			 
+		 !calculate the K
+		 WHERE ( ABS(VAR) >= 1e-30_fp)
+		     Lrate = -Lrate/VAR
+		 ELSEWHERE
+		     Lrate = 0.0_fp
+		 END WHERE
+	 
+	     !State_Chm%LS_Prate(I,J,L,:)=Prate
+	     !State_Chm%LS_Lrate(I,J,L,:)=Lrate		 
+		 
+	   !ENDIF
 !#if defined( DEVEL )
 !       ! Get time when rate computation finished
 !       CALL CPU_TIME( finish )
@@ -903,10 +931,121 @@ CONTAINS
 !         ! Get time before integrator starts
 !         CALL CPU_TIME( start )
 !#endif
-
        ! Call the KPP integrator
-       CALL Integrate( TIN,    TOUT,    ICNTRL,      &
+
+	   !Prate=State_Chm%LS_Prate(I,J,L,:)
+	   !Lrate=State_Chm%LS_Lrate(I,J,L,:)
+	   !LS_type=State_Chm%LS_Alltype(I,J,L)
+	   !IF (I==10 .and. J==10) THEN
+	   !    print *,'lshen_LS_type',L, LS_type
+	   !END IF
+	   SELECT CASE (LS_type)
+	     CASE (1)
+		    LS_NSEL=LU_NSEL_1
+			LS_NDEL=LU_NDEL_1	
+            CALL Integrate_1( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (2)
+		    LS_NSEL=LU_NSEL_2
+			LS_NDEL=LU_NDEL_2	
+            CALL Integrate_2( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (3)
+		    LS_NSEL=LU_NSEL_3
+			LS_NDEL=LU_NDEL_3	
+            CALL Integrate_3( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (4)
+		    LS_NSEL=LU_NSEL_4
+			LS_NDEL=LU_NDEL_4	
+            CALL Integrate_4( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (5)
+		    LS_NSEL=LU_NSEL_5
+			LS_NDEL=LU_NDEL_5	
+            CALL Integrate_5( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (6)
+		    LS_NSEL=LU_NSEL_6
+			LS_NDEL=LU_NDEL_6	
+            CALL Integrate_6( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (7)
+		    LS_NSEL=LU_NSEL_7
+			LS_NDEL=LU_NDEL_7	
+            CALL Integrate_7( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (8)
+		    LS_NSEL=LU_NSEL_8
+			LS_NDEL=LU_NDEL_8	
+            CALL Integrate_8( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (9)
+		    LS_NSEL=LU_NSEL_9
+			LS_NDEL=LU_NDEL_9	
+            CALL Integrate_9( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )			
+	     CASE (10)
+		    LS_NSEL=LU_NSEL_10
+			LS_NDEL=LU_NDEL_10	
+            CALL Integrate_10( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )	
+	     CASE (11)
+		    LS_NSEL=LU_NSEL_11
+			LS_NDEL=LU_NDEL_11	
+            CALL Integrate_11( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )	
+	     CASE (12)
+		    LS_NSEL=LU_NSEL_12
+			LS_NDEL=LU_NDEL_12	
+            CALL Integrate_12( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )	
+	     CASE (13)
+		    LS_NSEL=LU_NSEL_13
+			LS_NDEL=LU_NDEL_13	
+            CALL Integrate_13( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )	
+	     CASE (14)
+		    LS_NSEL=LU_NSEL_14
+			LS_NDEL=LU_NDEL_14	
+            CALL Integrate_14( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )	
+	     CASE (15)
+		    LS_NSEL=LU_NSEL_15
+			LS_NDEL=LU_NDEL_15	
+            CALL Integrate_15( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )
+	     CASE (16)
+		    LS_NSEL=LU_NSEL_16
+			LS_NDEL=LU_NDEL_16	
+            CALL Integrate_16( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )
+	     CASE (17)
+		    LS_NSEL=LU_NSEL_17
+			LS_NDEL=LU_NDEL_17	
+            CALL Integrate_17( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )
+	     CASE (18)
+		    LS_NSEL=LU_NSEL_18
+			LS_NDEL=LU_NDEL_18	
+            CALL Integrate_18( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )
+	     CASE (19)
+		    LS_NSEL=LU_NSEL_19
+			LS_NDEL=LU_NDEL_19	
+            CALL Integrate_19( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )
+	     CASE (20)
+		    LS_NSEL=LU_NSEL_20
+			LS_NDEL=LU_NDEL_20	
+            CALL Integrate_20( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )				   
+		 CASE DEFAULT
+		    LS_NSEL=LU_NSEL_9
+			LS_NDEL=LU_NDEL_9				 
+            CALL Integrate_9( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )					    
+	   END SELECT		 	   	  
 
        ! Print grid box indices to screen if integrate failed
        IF ( IERR < 0 ) THEN
@@ -944,9 +1083,12 @@ CONTAINS
           CALL Init_KPP( )
           VAR = C(1:NVAR)
           FIX = C(NVAR+1:NSPEC)
-          CALL Update_RCONST( )
-          CALL Integrate( TIN,    TOUT,    ICNTRL,      &
-                          RCNTRL, ISTATUS, RSTATE, IERR )
+          CALL Update_RCONST( )		  		 
+		  
+		    LS_NSEL=LU_NSEL_9
+			LS_NDEL=LU_NDEL_9				 
+            CALL Integrate_9( TIN,TOUT, Prate, Lrate, ICNTRL, &
+                       RCNTRL, ISTATUS, RSTATE, IERR )	
           IF ( IERR < 0 ) THEN 
              WRITE(6,*) '## INTEGRATE FAILED TWICE !!! '
              WRITE(ERRMSG,'(a,i3)') 'Integrator error code :',IERR
@@ -1117,9 +1259,10 @@ CONTAINS
     ENDDO
     ENDDO
     !$OMP END PARALLEL DO
+
     CALL CPU_TIME(time=TimeEnd)
     PRINT *,'lshen_test_CPUtime: ',TimeEnd-TimeStart
-
+	
 !!!#if defined( DEVEL )
 !    write(*,'(a,F10.3)') 'Flex Rate Time     : ', rtim
 !    write(*,'(a,F10.3)') 'Flex Intg Time     : ', itim
@@ -1242,6 +1385,26 @@ CONTAINS
     ! Set FIRSTCHEM = .FALSE. -- we have gone thru one chem step
     FIRSTCHEM = .FALSE.
 
+  !print *,'lshen_test_new_hour',NHMS,new_hour
+  !if (new_hour) then    
+  !  YMDH=NYMD*100+NHMS/10000
+  !  print *,NYMD,NHMS,YMDH
+  !  write (outputname1, "(A15,I10,A4)") "PL/lshen_Prate_", YMDH,'.txt'
+  !  write (outputname2, "(A15,I10,A4)") "PL/lshen_Lrate_", YMDH,'.txt'		
+  !  OPEN(unit=1101,file=outputname1)
+  !  OPEN(unit=1102,file=outputname2)
+  !       DO L=1,LLPAR
+  !         DO J=1,JJPAR
+  !          DO I=1,IIPAR
+  !            write(1101,'(3I4,234E15.3)'), I,J,L,LS_Prate(I,J,L,:)
+  !            write(1102,'(3I4,234E15.3)'), I,J,L,LS_Lrate(I,J,L,:)
+  !          ENDDO
+  !         ENDDO
+  !       ENDDO
+  !  close(1101)!lshen
+  !  close(1102)
+  !endif
+  
   END SUBROUTINE Do_FlexChem
 !EOC
 !------------------------------------------------------------------------------
