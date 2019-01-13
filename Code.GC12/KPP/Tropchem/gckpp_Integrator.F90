@@ -6056,7 +6056,7 @@ SUBROUTINE INTEGRATE_7( TIN, TOUT, &
 
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
-   REAL(kind=dp) :: VAR_selected(LU_NSEL_7),VAR_deleted(LU_NDEL_7),LS_P(LU_NDEL_7),LS_L(LU_NDEL_7)
+
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -6078,22 +6078,9 @@ SUBROUTINE INTEGRATE_7( TIN, TOUT, &
      WHERE(RCNTRL_U(:) > 0) RCNTRL(:) = RCNTRL_U(:)
    END IF
 
-   VAR_selected=VAR(select_ind_7)
-   VAR_deleted=VAR(delete_ind_7)
-   LS_P=Prate(delete_ind_7)
-   LS_L=Lrate(delete_ind_7)
-   WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
-   ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
-   END WHERE!LS
-   WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
-   END WHERE
-   CALL Rosenbrock_7(LU_NSEL_7,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
+
+   CALL Rosenbrock_7(LU_NSEL_7,VAR,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
-   VAR(select_ind_7)=VAR_selected
-   VAR(delete_ind_7)=VAR_deleted
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -6109,7 +6096,7 @@ SUBROUTINE INTEGRATE_7( TIN, TOUT, &
 END SUBROUTINE INTEGRATE_7
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE Rosenbrock_7(N,Y,VAR_deleted,Tstart,Tend, &
+SUBROUTINE Rosenbrock_7(N,Y,Tstart,Tend, &
            AbsTol,RelTol,              &
            RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)
 
@@ -6121,7 +6108,6 @@ SUBROUTINE Rosenbrock_7(N,Y,VAR_deleted,Tstart,Tend, &
 !~~~>  Arguments
    INTEGER,       INTENT(IN)    :: N
    REAL(kind=dp), INTENT(INOUT) :: Y(N)
-   REAL(kind=dp), INTENT(IN)    :: VAR_deleted(LU_NDEL_7)
    REAL(kind=dp), INTENT(IN)    :: Tstart,Tend
    REAL(kind=dp), INTENT(IN)    :: AbsTol(N),RelTol(N)
    INTEGER,       INTENT(IN)    :: ICNTRL(20)
@@ -6419,7 +6405,7 @@ TimeLoop: DO WHILE ( (Direction > 0).AND.((T-Tend)+Roundoff <= ZERO) &
    H = MIN(H,ABS(Tend-T))
 
 !~~~>   Compute the function at current time
-   CALL FunTemplate_7(T,Y,Fcn0,VAR_deleted)
+   CALL FunTemplate_7(T,Y,Fcn0)
    ISTATUS(Nfun) = ISTATUS(Nfun) + 1
 
 !~~~>  Compute the function derivative with respect to T
@@ -6429,7 +6415,7 @@ TimeLoop: DO WHILE ( (Direction > 0).AND.((T-Tend)+Roundoff <= ZERO) &
    END IF
 
 !~~~>   Compute the Jacobian at current time
-   CALL JacTemplate_7(T,Y,Jac0, VAR_deleted)
+   CALL JacTemplate_7(T,Y,Jac0)
    ISTATUS(Njac) = ISTATUS(Njac) + 1
 
 !~~~>  Repeat step calculation until current step accepted
@@ -6461,7 +6447,7 @@ Stage: DO istage = 1, ros_S
             K(N*(j-1)+1),1,Ynew,1)
          END DO
          Tau = T + ros_Alpha(istage)*Direction*H
-         CALL FunTemplate_7(Tau,Ynew,Fcn,VAR_deleted)
+         CALL FunTemplate_7(Tau,Ynew,Fcn)
          ISTATUS(Nfun) = ISTATUS(Nfun) + 1
        END IF ! if istage == 1 elseif ros_NewF(istage)
        !slim: CALL WCOPY(N,Fcn,1,K(ioffset+1),1)
@@ -6588,7 +6574,7 @@ Stage: DO istage = 1, ros_S
    REAL(kind=dp), PARAMETER :: ONE = 1.0_dp, DeltaMin = 1.0E-6_dp
 
    Delta = SQRT(Roundoff)*MAX(DeltaMin,ABS(T))
-   CALL FunTemplate_7(T+Delta,Y,dFdT,VAR_deleted)
+   CALL FunTemplate_7(T+Delta,Y,dFdT)
    ISTATUS(Nfun) = ISTATUS(Nfun) + 1
    CALL WAXPY(N,(-ONE),Fcn0,1,dFdT,1)
    CALL WSCAL(N,(ONE/Delta),dFdT,1)
@@ -7162,15 +7148,13 @@ END SUBROUTINE Rosenbrock_7
 
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE FunTemplate_7(T, Y, Ydot,VAR_deleted )
+SUBROUTINE FunTemplate_7( T, Y, Ydot )
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !  Template for the ODE function call.
 !  Updates the rate coefficients (and possibly the fixed species) at each call
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  USE gckpp_Global, ONLY: FIX, RCONST, TIME
  USE gckpp_Function, ONLY: Fun_7
- 
- REAL(kind=dp),INTENT(IN)::VAR_deleted(LU_NDEL_7)
 !~~~> Input variables
    REAL(kind=dp) :: T, Y(LU_NSEL_7)
 !~~~> Output variables
@@ -7180,14 +7164,14 @@ SUBROUTINE FunTemplate_7(T, Y, Ydot,VAR_deleted )
 
    Told = TIME
    TIME = T
-   CALL Fun_7( Y,VAR_deleted, FIX, RCONST, Ydot )
+   CALL Fun_7( Y, FIX, RCONST, Ydot, LU_NSEL_7 )
    TIME = Told
 
 END SUBROUTINE FunTemplate_7
 
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE JacTemplate_7( T, Y, Jcb, VAR_deleted )
+SUBROUTINE JacTemplate_7( T, Y, Jcb )
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !  Template for the ODE Jacobian call.
 !  Updates the rate coefficients (and possibly the fixed species) at each call
@@ -7195,8 +7179,6 @@ SUBROUTINE JacTemplate_7( T, Y, Jcb, VAR_deleted )
  USE gckpp_Global, ONLY: FIX, RCONST, TIME
  USE gckpp_Jacobian, ONLY: Jac_SP_7
  USE gckpp_LinearAlgebra
- 
- REAL(kind=dp),INTENT(IN)::VAR_deleted(LU_NDEL_7)
 !~~~> Input variables
     REAL(kind=dp) :: T, Y(LU_NSEL_7)
 !~~~> Output variables
@@ -7214,7 +7196,7 @@ SUBROUTINE JacTemplate_7( T, Y, Jcb, VAR_deleted )
     Told = TIME
     TIME = T
 #ifdef FULL_ALGEBRA    
-    CALL Jac_SP_7(Y,VAR_deleted, FIX, RCONST, JV)
+    CALL Jac_SP_7(Y, FIX, RCONST, JV)
     DO j=1,LU_NSEL_7
       DO i=1,LU_NSEL_7
          Jcb(i,j) = 0.0_dp
@@ -7224,13 +7206,11 @@ SUBROUTINE JacTemplate_7( T, Y, Jcb, VAR_deleted )
        Jcb(LU_IROW_7(i),LU_ICOL_7(i)) = JV(i)
     END DO
 #else
-    CALL Jac_SP_7( Y, VAR_deleted, FIX, RCONST, Jcb )
+    CALL Jac_SP_7( Y, FIX, RCONST, Jcb)
 #endif   
     TIME = Told
 
 END SUBROUTINE JacTemplate_7
-
-
 
 SUBROUTINE INTEGRATE_8( TIN, TOUT, &
   Prate, Lrate, &
@@ -8442,7 +8422,7 @@ SUBROUTINE INTEGRATE_9( TIN, TOUT, &
 
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
-
+   REAL(kind=dp) :: VAR_selected(LU_NSEL_9),VAR_deleted(LU_NDEL_9),LS_P(LU_NDEL_9),LS_L(LU_NDEL_9)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -8464,9 +8444,22 @@ SUBROUTINE INTEGRATE_9( TIN, TOUT, &
      WHERE(RCNTRL_U(:) > 0) RCNTRL(:) = RCNTRL_U(:)
    END IF
 
-
-   CALL Rosenbrock_9(LU_NSEL_9,VAR,TIN,TOUT,ATOL,RTOL,&
+   VAR_selected=VAR(select_ind_9)
+   VAR_deleted=VAR(delete_ind_9)
+   LS_P=Prate(delete_ind_9)
+   LS_L=Lrate(delete_ind_9)
+   WHERE(LS_L<=(0.01/deltaT))!LS
+		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+   ELSEWHERE!LS
+		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+   END WHERE!LS
+   WHERE(LS_L>=(10/deltaT))!LS
+         VAR_deleted=LS_P/LS_L
+   END WHERE
+   CALL Rosenbrock_9(LU_NSEL_9,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
+   VAR(select_ind_9)=VAR_selected
+   VAR(delete_ind_9)=VAR_deleted
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -8482,7 +8475,7 @@ SUBROUTINE INTEGRATE_9( TIN, TOUT, &
 END SUBROUTINE INTEGRATE_9
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE Rosenbrock_9(N,Y,Tstart,Tend, &
+SUBROUTINE Rosenbrock_9(N,Y,VAR_deleted,Tstart,Tend, &
            AbsTol,RelTol,              &
            RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)
 
@@ -8494,6 +8487,7 @@ SUBROUTINE Rosenbrock_9(N,Y,Tstart,Tend, &
 !~~~>  Arguments
    INTEGER,       INTENT(IN)    :: N
    REAL(kind=dp), INTENT(INOUT) :: Y(N)
+   REAL(kind=dp), INTENT(IN)    :: VAR_deleted(LU_NDEL_9)
    REAL(kind=dp), INTENT(IN)    :: Tstart,Tend
    REAL(kind=dp), INTENT(IN)    :: AbsTol(N),RelTol(N)
    INTEGER,       INTENT(IN)    :: ICNTRL(20)
@@ -8791,7 +8785,7 @@ TimeLoop: DO WHILE ( (Direction > 0).AND.((T-Tend)+Roundoff <= ZERO) &
    H = MIN(H,ABS(Tend-T))
 
 !~~~>   Compute the function at current time
-   CALL FunTemplate_9(T,Y,Fcn0)
+   CALL FunTemplate_9(T,Y,Fcn0,VAR_deleted)
    ISTATUS(Nfun) = ISTATUS(Nfun) + 1
 
 !~~~>  Compute the function derivative with respect to T
@@ -8801,7 +8795,7 @@ TimeLoop: DO WHILE ( (Direction > 0).AND.((T-Tend)+Roundoff <= ZERO) &
    END IF
 
 !~~~>   Compute the Jacobian at current time
-   CALL JacTemplate_9(T,Y,Jac0)
+   CALL JacTemplate_9(T,Y,Jac0, VAR_deleted)
    ISTATUS(Njac) = ISTATUS(Njac) + 1
 
 !~~~>  Repeat step calculation until current step accepted
@@ -8833,7 +8827,7 @@ Stage: DO istage = 1, ros_S
             K(N*(j-1)+1),1,Ynew,1)
          END DO
          Tau = T + ros_Alpha(istage)*Direction*H
-         CALL FunTemplate_9(Tau,Ynew,Fcn)
+         CALL FunTemplate_9(Tau,Ynew,Fcn,VAR_deleted)
          ISTATUS(Nfun) = ISTATUS(Nfun) + 1
        END IF ! if istage == 1 elseif ros_NewF(istage)
        !slim: CALL WCOPY(N,Fcn,1,K(ioffset+1),1)
@@ -8960,7 +8954,7 @@ Stage: DO istage = 1, ros_S
    REAL(kind=dp), PARAMETER :: ONE = 1.0_dp, DeltaMin = 1.0E-6_dp
 
    Delta = SQRT(Roundoff)*MAX(DeltaMin,ABS(T))
-   CALL FunTemplate_9(T+Delta,Y,dFdT)
+   CALL FunTemplate_9(T+Delta,Y,dFdT,VAR_deleted)
    ISTATUS(Nfun) = ISTATUS(Nfun) + 1
    CALL WAXPY(N,(-ONE),Fcn0,1,dFdT,1)
    CALL WSCAL(N,(ONE/Delta),dFdT,1)
@@ -9534,13 +9528,15 @@ END SUBROUTINE Rosenbrock_9
 
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE FunTemplate_9( T, Y, Ydot )
+SUBROUTINE FunTemplate_9(T, Y, Ydot,VAR_deleted )
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !  Template for the ODE function call.
 !  Updates the rate coefficients (and possibly the fixed species) at each call
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  USE gckpp_Global, ONLY: FIX, RCONST, TIME
  USE gckpp_Function, ONLY: Fun_9
+ 
+ REAL(kind=dp),INTENT(IN)::VAR_deleted(LU_NDEL_9)
 !~~~> Input variables
    REAL(kind=dp) :: T, Y(LU_NSEL_9)
 !~~~> Output variables
@@ -9550,14 +9546,14 @@ SUBROUTINE FunTemplate_9( T, Y, Ydot )
 
    Told = TIME
    TIME = T
-   CALL Fun_9( Y, FIX, RCONST, Ydot, LU_NSEL_9 )
+   CALL Fun_9( Y,VAR_deleted, FIX, RCONST, Ydot )
    TIME = Told
 
 END SUBROUTINE FunTemplate_9
 
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SUBROUTINE JacTemplate_9( T, Y, Jcb )
+SUBROUTINE JacTemplate_9( T, Y, Jcb, VAR_deleted )
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !  Template for the ODE Jacobian call.
 !  Updates the rate coefficients (and possibly the fixed species) at each call
@@ -9565,6 +9561,8 @@ SUBROUTINE JacTemplate_9( T, Y, Jcb )
  USE gckpp_Global, ONLY: FIX, RCONST, TIME
  USE gckpp_Jacobian, ONLY: Jac_SP_9
  USE gckpp_LinearAlgebra
+ 
+ REAL(kind=dp),INTENT(IN)::VAR_deleted(LU_NDEL_9)
 !~~~> Input variables
     REAL(kind=dp) :: T, Y(LU_NSEL_9)
 !~~~> Output variables
@@ -9582,7 +9580,7 @@ SUBROUTINE JacTemplate_9( T, Y, Jcb )
     Told = TIME
     TIME = T
 #ifdef FULL_ALGEBRA    
-    CALL Jac_SP_9(Y, FIX, RCONST, JV)
+    CALL Jac_SP_9(Y,VAR_deleted, FIX, RCONST, JV)
     DO j=1,LU_NSEL_9
       DO i=1,LU_NSEL_9
          Jcb(i,j) = 0.0_dp
@@ -9592,11 +9590,13 @@ SUBROUTINE JacTemplate_9( T, Y, Jcb )
        Jcb(LU_IROW_9(i),LU_ICOL_9(i)) = JV(i)
     END DO
 #else
-    CALL Jac_SP_9( Y, FIX, RCONST, Jcb)
+    CALL Jac_SP_9( Y, VAR_deleted, FIX, RCONST, Jcb )
 #endif   
     TIME = Told
 
 END SUBROUTINE JacTemplate_9
+
+
 
 SUBROUTINE INTEGRATE_10( TIN, TOUT, &
   Prate, Lrate, &

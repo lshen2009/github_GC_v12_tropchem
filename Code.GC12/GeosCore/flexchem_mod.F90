@@ -1041,9 +1041,9 @@ CONTAINS
             CALL Integrate_20( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )				   
 		 CASE DEFAULT
-		    LS_NSEL=LU_NSEL_9
-			LS_NDEL=LU_NDEL_9				 
-            CALL Integrate_9( TIN,TOUT, Prate, Lrate, ICNTRL, &
+		    LS_NSEL=LU_NSEL_7
+			LS_NDEL=LU_NDEL_7				 
+            CALL Integrate_7( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )					    
 	   END SELECT		 	   	  
 
@@ -1085,9 +1085,9 @@ CONTAINS
           FIX = C(NVAR+1:NSPEC)
           CALL Update_RCONST( )		  		 
 		  
-		    LS_NSEL=LU_NSEL_9
-			LS_NDEL=LU_NDEL_9				 
-            CALL Integrate_9( TIN,TOUT, Prate, Lrate, ICNTRL, &
+		    LS_NSEL=LU_NSEL_7
+			LS_NDEL=LU_NDEL_7				 
+            CALL Integrate_7( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )	
           IF ( IERR < 0 ) THEN 
              WRITE(6,*) '## INTEGRATE FAILED TWICE !!! '
