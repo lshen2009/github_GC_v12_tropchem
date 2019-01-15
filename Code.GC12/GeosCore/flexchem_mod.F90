@@ -893,9 +893,12 @@ CONTAINS
          COSSZA=State_Met%SUNCOSmid(I,J)
          SZA    = acos(MIN(MAX(COSSZA,-1._fp),1._fp))/PI180
 		 LS_change=0
-         IF(SZA>=90 .and. SZA<=100 .and. L>=20) THEN            
-              LS_change=1
-         ENDIF 
+         !IF(SZA>=90 .and. SZA<=100 .and. L>=20) THEN            
+         !     LS_change=1
+         !ENDIF 
+		 IF(L>=20)THEN
+		     LS_change=1
+		 ENDIF
 		 LS_type=Determine_type(Prate,Lrate,LS_change)
 		 
 		 !calculate the K
