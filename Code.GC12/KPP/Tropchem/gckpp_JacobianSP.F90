@@ -6655,8 +6655,5 @@ INTEGER, PARAMETER, DIMENSION(1024) :: all_types = (/ &
 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,&
 7,7,7,7/)
   
-
-
-
 END MODULE gckpp_JacobianSP
 

@@ -220,7 +220,7 @@ CONTAINS
     REAL(fp)               :: Start,     Finish,   rtim,      itim
     REAL(fp)               :: SO4_FRAC,  YLAT,     T,         TIN
     REAL(fp)               :: JNoon_Fac, TOUT
-	INTEGER                :: LS_type, LS_NSEL, LS_NDEL
+	INTEGER                :: LS_type, LS_NSEL, LS_NDEL,LS_change
     ! Strings
     CHARACTER(LEN=63)      :: OrigUnit
     CHARACTER(LEN=255)     :: ErrMsg,   ThisLoc
@@ -618,7 +618,7 @@ CONTAINS
     !$OMP PRIVATE  ( SO4_FRAC, IERR,     RCNTRL,  START, FINISH, ISTATUS    )&
     !$OMP PRIVATE  ( RSTATE,   SpcID,    KppID,   F,     P                  )&
     !$OMP PRIVATE  ( LCH4,     PCO_TOT,  PCO_CH4, PCO_NMVOC                 ) &
-	!$OMP PRIVATE  ( LS_type,  LS_NSEL,  LS_NDEL, Prate, Lrate ) &
+	!$OMP PRIVATE  ( LS_type,  LS_NSEL,  LS_NDEL, Prate, Lrate, LS_change ) &
 	!$OMP PRIVATE  ( SZA,PI180,COSSZA) &
     !$OMP REDUCTION( +:ITIM                                                 )&
     !$OMP REDUCTION( +:RTIM                                                 )&
@@ -888,13 +888,16 @@ CONTAINS
 	   !IF (new_hour) THEN
 	   !IF (MOD(NHMS,2000)==0) then	  
 	     CALL Fun_PL(VAR, FIX, RCONST, Prate, Lrate)
-		 LS_type=Determine_type(Prate,Lrate)			 
+		 
          PI180  = PI/180.e+0_fp
          COSSZA=State_Met%SUNCOSmid(I,J)
          SZA    = acos(MIN(MAX(COSSZA,-1._fp),1._fp))/PI180
+		 LS_change=0
          IF(SZA>=90 .and. SZA<=100 .and. L>=30) THEN            
-              LS_type=7
-         ENDIF
+              LS_change=1
+         ENDIF 
+		 LS_type=Determine_type(Prate,Lrate,LS_change)
+		 
 		 !calculate the K
 		 WHERE ( ABS(VAR) >= 1e-30_fp)
 		     Lrate = -Lrate/VAR

@@ -18214,9 +18214,9 @@ SUBROUTINE Fun_PL ( V, F, RCT, Prate, Lrate)
 
 END SUBROUTINE Fun_PL
 
-FUNCTION Determine_type (Prate,Lrate) RESULT( flag )
+FUNCTION Determine_type (Prate,Lrate,LS_change) RESULT( flag )
   REAL(kind=dp) :: Prate(NVAR),Lrate(NVAR)
-  INTEGER ::Vdot(NVAR),PP(10),ap,flag,I
+  INTEGER ::Vdot(NVAR),PP(10),ap,flag,I,LS_change
   flag=0
   Vdot=0
   WHERE (abs(Prate)>=100 .or. abs(Lrate)>=100) Vdot=1
@@ -18230,12 +18230,11 @@ FUNCTION Determine_type (Prate,Lrate) RESULT( flag )
   PP(8)=SUM(Vdot(LS_ind_8))
   PP(9)=SUM(Vdot(LS_ind_9))
   PP(10)=SUM(Vdot(LS_ind_10))
+  if(LS_change>0)PP(4)=1!this is used to reduce errors in halogen species
   WHERE (PP>=1) PP=1
   ap=sum(LS_bin_base*PP)
   flag=all_types(ap+1)
   if(flag>20)flag=7!set to full chemistry
-
 END FUNCTION Determine_type
-
 
 END MODULE gckpp_Function
