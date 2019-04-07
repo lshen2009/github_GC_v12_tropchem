@@ -896,9 +896,6 @@ CONTAINS
          !IF(SZA>=90 .and. SZA<=100 .and. L>=20) THEN            
          !     LS_change=1
          !ENDIF 
-		 IF(L>=20)THEN
-		     LS_change=1
-		 ENDIF
 		 LS_type=Determine_type(Prate,Lrate,LS_change)
 		 
 		 !calculate the K
@@ -1053,9 +1050,9 @@ CONTAINS
             CALL Integrate_20( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )				   
 		 CASE DEFAULT
-		    LS_NSEL=LU_NSEL_7
-			LS_NDEL=LU_NDEL_7				 
-            CALL Integrate_7( TIN,TOUT, Prate, Lrate, ICNTRL, &
+		    LS_NSEL=LU_NSEL_10
+			LS_NDEL=LU_NDEL_10				 
+            CALL Integrate_10( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )					    
 	   END SELECT		 	   	  
 
@@ -1097,9 +1094,9 @@ CONTAINS
           FIX = C(NVAR+1:NSPEC)
           CALL Update_RCONST( )		  		 
 		  
-		    LS_NSEL=LU_NSEL_7
-			LS_NDEL=LU_NDEL_7				 
-            CALL Integrate_7( TIN,TOUT, Prate, Lrate, ICNTRL, &
+		    LS_NSEL=LU_NSEL_10
+			LS_NDEL=LU_NDEL_10				 
+            CALL Integrate_10( TIN,TOUT, Prate, Lrate, ICNTRL, &
                        RCNTRL, ISTATUS, RSTATE, IERR )	
           IF ( IERR < 0 ) THEN 
              WRITE(6,*) '## INTEGRATE FAILED TWICE !!! '
