@@ -32,6 +32,7 @@ SUBROUTINE INTEGRATE_1( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_1),VAR_deleted(LU_NDEL_1),LS_P(LU_NDEL_1),LS_L(LU_NDEL_1)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_1)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -58,17 +59,17 @@ SUBROUTINE INTEGRATE_1( TIN, TOUT, &
    LS_P=Prate(delete_ind_1)
    LS_L=Lrate(delete_ind_1)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_1(LU_NSEL_1,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_1)=VAR_selected
-   VAR(delete_ind_1)=VAR_deleted
+   VAR(delete_ind_1)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -1225,6 +1226,7 @@ SUBROUTINE INTEGRATE_2( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_2),VAR_deleted(LU_NDEL_2),LS_P(LU_NDEL_2),LS_L(LU_NDEL_2)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_2)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -1251,17 +1253,17 @@ SUBROUTINE INTEGRATE_2( TIN, TOUT, &
    LS_P=Prate(delete_ind_2)
    LS_L=Lrate(delete_ind_2)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_2(LU_NSEL_2,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_2)=VAR_selected
-   VAR(delete_ind_2)=VAR_deleted
+   VAR(delete_ind_2)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -2418,6 +2420,7 @@ SUBROUTINE INTEGRATE_3( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_3),VAR_deleted(LU_NDEL_3),LS_P(LU_NDEL_3),LS_L(LU_NDEL_3)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_3)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -2444,17 +2447,17 @@ SUBROUTINE INTEGRATE_3( TIN, TOUT, &
    LS_P=Prate(delete_ind_3)
    LS_L=Lrate(delete_ind_3)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_3(LU_NSEL_3,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_3)=VAR_selected
-   VAR(delete_ind_3)=VAR_deleted
+   VAR(delete_ind_3)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -3611,6 +3614,7 @@ SUBROUTINE INTEGRATE_4( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_4),VAR_deleted(LU_NDEL_4),LS_P(LU_NDEL_4),LS_L(LU_NDEL_4)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_4)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -3637,17 +3641,17 @@ SUBROUTINE INTEGRATE_4( TIN, TOUT, &
    LS_P=Prate(delete_ind_4)
    LS_L=Lrate(delete_ind_4)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_4(LU_NSEL_4,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_4)=VAR_selected
-   VAR(delete_ind_4)=VAR_deleted
+   VAR(delete_ind_4)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -4804,6 +4808,7 @@ SUBROUTINE INTEGRATE_5( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_5),VAR_deleted(LU_NDEL_5),LS_P(LU_NDEL_5),LS_L(LU_NDEL_5)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_5)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -4830,17 +4835,17 @@ SUBROUTINE INTEGRATE_5( TIN, TOUT, &
    LS_P=Prate(delete_ind_5)
    LS_L=Lrate(delete_ind_5)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_5(LU_NSEL_5,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_5)=VAR_selected
-   VAR(delete_ind_5)=VAR_deleted
+   VAR(delete_ind_5)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -5997,6 +6002,7 @@ SUBROUTINE INTEGRATE_6( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_6),VAR_deleted(LU_NDEL_6),LS_P(LU_NDEL_6),LS_L(LU_NDEL_6)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_6)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -6023,17 +6029,17 @@ SUBROUTINE INTEGRATE_6( TIN, TOUT, &
    LS_P=Prate(delete_ind_6)
    LS_L=Lrate(delete_ind_6)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_6(LU_NSEL_6,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_6)=VAR_selected
-   VAR(delete_ind_6)=VAR_deleted
+   VAR(delete_ind_6)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -7190,6 +7196,7 @@ SUBROUTINE INTEGRATE_7( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_7),VAR_deleted(LU_NDEL_7),LS_P(LU_NDEL_7),LS_L(LU_NDEL_7)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_7)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -7216,17 +7223,17 @@ SUBROUTINE INTEGRATE_7( TIN, TOUT, &
    LS_P=Prate(delete_ind_7)
    LS_L=Lrate(delete_ind_7)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_7(LU_NSEL_7,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_7)=VAR_selected
-   VAR(delete_ind_7)=VAR_deleted
+   VAR(delete_ind_7)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -8383,6 +8390,7 @@ SUBROUTINE INTEGRATE_8( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_8),VAR_deleted(LU_NDEL_8),LS_P(LU_NDEL_8),LS_L(LU_NDEL_8)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_8)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -8409,17 +8417,17 @@ SUBROUTINE INTEGRATE_8( TIN, TOUT, &
    LS_P=Prate(delete_ind_8)
    LS_L=Lrate(delete_ind_8)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_8(LU_NSEL_8,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_8)=VAR_selected
-   VAR(delete_ind_8)=VAR_deleted
+   VAR(delete_ind_8)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -9576,6 +9584,7 @@ SUBROUTINE INTEGRATE_9( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_9),VAR_deleted(LU_NDEL_9),LS_P(LU_NDEL_9),LS_L(LU_NDEL_9)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_9)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -9602,17 +9611,17 @@ SUBROUTINE INTEGRATE_9( TIN, TOUT, &
    LS_P=Prate(delete_ind_9)
    LS_L=Lrate(delete_ind_9)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_9(LU_NSEL_9,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_9)=VAR_selected
-   VAR(delete_ind_9)=VAR_deleted
+   VAR(delete_ind_9)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -11942,6 +11951,7 @@ SUBROUTINE INTEGRATE_11( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_11),VAR_deleted(LU_NDEL_11),LS_P(LU_NDEL_11),LS_L(LU_NDEL_11)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_11)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -11968,17 +11978,17 @@ SUBROUTINE INTEGRATE_11( TIN, TOUT, &
    LS_P=Prate(delete_ind_11)
    LS_L=Lrate(delete_ind_11)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_11(LU_NSEL_11,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_11)=VAR_selected
-   VAR(delete_ind_11)=VAR_deleted
+   VAR(delete_ind_11)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -13135,6 +13145,7 @@ SUBROUTINE INTEGRATE_12( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_12),VAR_deleted(LU_NDEL_12),LS_P(LU_NDEL_12),LS_L(LU_NDEL_12)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_12)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -13161,17 +13172,17 @@ SUBROUTINE INTEGRATE_12( TIN, TOUT, &
    LS_P=Prate(delete_ind_12)
    LS_L=Lrate(delete_ind_12)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_12(LU_NSEL_12,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_12)=VAR_selected
-   VAR(delete_ind_12)=VAR_deleted
+   VAR(delete_ind_12)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -14328,6 +14339,7 @@ SUBROUTINE INTEGRATE_13( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_13),VAR_deleted(LU_NDEL_13),LS_P(LU_NDEL_13),LS_L(LU_NDEL_13)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_13)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -14354,17 +14366,17 @@ SUBROUTINE INTEGRATE_13( TIN, TOUT, &
    LS_P=Prate(delete_ind_13)
    LS_L=Lrate(delete_ind_13)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_13(LU_NSEL_13,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_13)=VAR_selected
-   VAR(delete_ind_13)=VAR_deleted
+   VAR(delete_ind_13)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -15521,6 +15533,7 @@ SUBROUTINE INTEGRATE_14( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_14),VAR_deleted(LU_NDEL_14),LS_P(LU_NDEL_14),LS_L(LU_NDEL_14)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_14)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -15547,17 +15560,17 @@ SUBROUTINE INTEGRATE_14( TIN, TOUT, &
    LS_P=Prate(delete_ind_14)
    LS_L=Lrate(delete_ind_14)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_14(LU_NSEL_14,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_14)=VAR_selected
-   VAR(delete_ind_14)=VAR_deleted
+   VAR(delete_ind_14)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -16714,6 +16727,7 @@ SUBROUTINE INTEGRATE_15( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_15),VAR_deleted(LU_NDEL_15),LS_P(LU_NDEL_15),LS_L(LU_NDEL_15)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_15)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -16740,17 +16754,17 @@ SUBROUTINE INTEGRATE_15( TIN, TOUT, &
    LS_P=Prate(delete_ind_15)
    LS_L=Lrate(delete_ind_15)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_15(LU_NSEL_15,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_15)=VAR_selected
-   VAR(delete_ind_15)=VAR_deleted
+   VAR(delete_ind_15)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -17907,6 +17921,7 @@ SUBROUTINE INTEGRATE_16( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_16),VAR_deleted(LU_NDEL_16),LS_P(LU_NDEL_16),LS_L(LU_NDEL_16)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_16)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -17933,17 +17948,17 @@ SUBROUTINE INTEGRATE_16( TIN, TOUT, &
    LS_P=Prate(delete_ind_16)
    LS_L=Lrate(delete_ind_16)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_16(LU_NSEL_16,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_16)=VAR_selected
-   VAR(delete_ind_16)=VAR_deleted
+   VAR(delete_ind_16)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -19100,6 +19115,7 @@ SUBROUTINE INTEGRATE_17( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_17),VAR_deleted(LU_NDEL_17),LS_P(LU_NDEL_17),LS_L(LU_NDEL_17)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_17)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -19126,17 +19142,17 @@ SUBROUTINE INTEGRATE_17( TIN, TOUT, &
    LS_P=Prate(delete_ind_17)
    LS_L=Lrate(delete_ind_17)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_17(LU_NSEL_17,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_17)=VAR_selected
-   VAR(delete_ind_17)=VAR_deleted
+   VAR(delete_ind_17)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -20293,6 +20309,7 @@ SUBROUTINE INTEGRATE_18( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_18),VAR_deleted(LU_NDEL_18),LS_P(LU_NDEL_18),LS_L(LU_NDEL_18)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_18)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -20319,17 +20336,17 @@ SUBROUTINE INTEGRATE_18( TIN, TOUT, &
    LS_P=Prate(delete_ind_18)
    LS_L=Lrate(delete_ind_18)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_18(LU_NSEL_18,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_18)=VAR_selected
-   VAR(delete_ind_18)=VAR_deleted
+   VAR(delete_ind_18)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -21486,6 +21503,7 @@ SUBROUTINE INTEGRATE_19( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_19),VAR_deleted(LU_NDEL_19),LS_P(LU_NDEL_19),LS_L(LU_NDEL_19)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_19)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -21512,17 +21530,17 @@ SUBROUTINE INTEGRATE_19( TIN, TOUT, &
    LS_P=Prate(delete_ind_19)
    LS_L=Lrate(delete_ind_19)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_19(LU_NSEL_19,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_19)=VAR_selected
-   VAR(delete_ind_19)=VAR_deleted
+   VAR(delete_ind_19)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
@@ -22679,6 +22697,7 @@ SUBROUTINE INTEGRATE_20( TIN, TOUT, &
    REAL(kind=dp) :: RCNTRL(20), RSTATUS(20),deltaT
    INTEGER       :: ICNTRL(20), ISTATUS(20), IERR
    REAL(kind=dp) :: VAR_selected(LU_NSEL_20),VAR_deleted(LU_NDEL_20),LS_P(LU_NDEL_20),LS_L(LU_NDEL_20)
+   REAL(kind=dp) :: VAR_deleted2(LU_NDEL_20)
    REAL(kind=dp), INTENT(IN) :: Prate(NVAR),Lrate(NVAR)
    INTEGER, SAVE :: Ntotal = 0
 
@@ -22705,17 +22724,17 @@ SUBROUTINE INTEGRATE_20( TIN, TOUT, &
    LS_P=Prate(delete_ind_20)
    LS_L=Lrate(delete_ind_20)
    WHERE(LS_L<=(0.01/deltaT))!LS
-		VAR_deleted=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
+		VAR_deleted2=VAR_deleted+deltaT*(LS_P-LS_L*VAR_deleted)
    ELSEWHERE!LS
-		VAR_deleted=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
+		VAR_deleted2=LS_P/LS_L+(VAR_deleted-LS_P/LS_L)*EXP(-LS_L*deltaT)
    END WHERE!LS
    WHERE(LS_L>=(10/deltaT))!LS
-         VAR_deleted=LS_P/LS_L
+         VAR_deleted2=LS_P/LS_L
    END WHERE
    CALL Rosenbrock_20(LU_NSEL_20,VAR_selected,VAR_deleted,TIN,TOUT,ATOL,RTOL,&
           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)		
    VAR(select_ind_20)=VAR_selected
-   VAR(delete_ind_20)=VAR_deleted
+   VAR(delete_ind_20)=VAR_deleted2
 	    
    !~~~> Debug option: show no of steps
    ! Ntotal = Ntotal + ISTATUS(Nstp)
